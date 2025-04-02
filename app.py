@@ -6,8 +6,9 @@ from collections import deque
 app = Flask(__name__)
 
 WINDOW_SIZE = 10
-
 number_window = deque(maxlen=WINDOW_SIZE)
+
+ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiZXhwIjoxNzQzNTk5OTUzLCJpYXQiOjE3NDM1OTk2NTMsImlzcyI6IkFmZm9yZG1lZCIsImp0aSI6IjMyNTkwNGY2LTk2NTctNDM2My04NmM2LWZjMjMwZDFhZDg2OCIsInN1YiI6IjIyMjkwNzVAa2lpdC5hYy5pbiJ9LCJlbWFpbCI6IjIyMjkwNzVAa2lpdC5hYy5pbiIsIm5hbWUiOiJzcmluamF5ZWUgcGF1bCIsInJvbGxObyI6IjIyMjkwNzUiLCJhY2Nlc3NDb2RlIjoibndwd3JaIiwiY2xpZW50SUQiOiIzMjU5MDRmNi05NjU3LTQzNjMtODZjNi1mYzIzMGQxYWQ4NjgiLCJjbGllbnRTZWNyZXQiOiJHRmZBd0hOVXVBbkdiUWRCIn0.cquRhhKnUso1m5s7PBZA-9vpqbIlXV8yxbIizdla8HY"
 
 API_URLS = {
     "p": "http://20.244.56.144/evaluation-service/primes",
@@ -17,25 +18,46 @@ API_URLS = {
 }
 
 def fetch_numbers(number_type):
-    """Fetch numbers from the test server, ensuring a response time < 500ms."""
+    """
+    Fetch numbers from the test server, ensuring:
+    - Authorization token is included.
+    - Response time is less than 500ms.
+    - Only valid responses are returned.
+    """
     url = API_URLS.get(number_type)
     if not url:
-        return None
+        return None 
+
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}"
+    }
 
     try:
         start_time = time.time()
-        response = requests.get(url, timeout=0.5) 
+        response = requests.get(url, headers=headers, timeout=0.5)
         end_time = time.time()
+
+        # Debugging logs
+        print(f"Fetching from: {url}")
+        print(f"Status Code: {response.status_code}")
+        print(f"Time Taken: {end_time - start_time}")
+        print(f"Response: {response.text}")
 
         if response.status_code == 200 and (end_time - start_time) <= 0.5:
             return response.json().get("numbers", [])
+
+        print("Ignoring slow response or bad status code.")
         return None 
-    except requests.exceptions.RequestException:
-        return None  #b
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching numbers: {e}")
+        return None 
 
 @app.route("/numbers/<number_id>", methods=["GET"])
 def get_numbers(number_id):
-    """Handle requests to fetch and store numbers."""
+    """
+    Handles requests to fetch numbers, maintain a sliding window,
+    and return the average.
+    """
     if number_id not in API_URLS:
         return jsonify({"error": "Invalid number ID"}), 400
 
