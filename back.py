@@ -1,10 +1,8 @@
 import requests
 
-# API Endpoints
 REGISTRATION_URL = "http://20.244.56.144/evaluation-service/register"
 AUTH_URL = "http://20.244.56.144/evaluation-service/auth"
 
-# Registration Data
 registration_data = {
     "email": "2229075@kiit.ac.in",
     "name": "Srinjayee Paul",
@@ -15,7 +13,6 @@ registration_data = {
     "accessCode": "nwpwrZ"
 }
 
-# Step 1: Register with the test server
 response = requests.post(REGISTRATION_URL, json=registration_data)
 
 if response.status_code == 200:
@@ -23,7 +20,6 @@ if response.status_code == 200:
     print("Registration Successful!")
     print(credentials)
 
-    # Extract client credentials
     client_id = credentials["clientID"]
     client_secret = credentials["clientSecret"]
     email = credentials["email"]
@@ -31,7 +27,6 @@ if response.status_code == 200:
     roll_no = credentials["rollNo"]
     access_code = credentials["accessCode"]
 
-    # Step 2: Get Authorization Token
     auth_data = {
         "email": email,
         "name": name,
